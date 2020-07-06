@@ -7,9 +7,15 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -37,6 +43,9 @@ public class Board {
 	public static final int BLACK = 3;
 	public static final int WHITE = 4;
 	
+	// 한 턴에 주는 초
+	public static final int TURN = 7;
+	
 	// 현재 놓을 돌 종류
 	int turn = DEFAULT;
 	
@@ -52,6 +61,14 @@ public class Board {
 	// 현재 남은 시간
 	int leftTime=15;
 	JLabel time = new JLabel("");
+	Timer timer = new Timer();
+	int c=0;
+	JLabel timeover = new JLabel("There is only 5 seconds left!");
+	
+	// 효과음
+	AudioInputStream stream1, stream2, stream3;
+	Clip clip1, clip2, clip3;
+	
 	
 	/**
 	 * Launch the application.
@@ -99,18 +116,20 @@ public class Board {
 		contentPane.add(player);
 		
 		// 타이머 시간
-		Timer timer = new Timer();
-		TimerTask task = new TimerTask() {
-
-			@Override
-			public void run() {
-				while(leftTime>0) {
-					System.out.println(leftTime);
-					leftTime--;
-				}
-				timer.cancel();
-			}
-		};
+		time.setHorizontalAlignment(SwingConstants.CENTER);
+		time.setFont(new Font("Chalkboard", Font.PLAIN, 20));
+		time.setBounds(775, 180, 115, 30);
+		contentPane.add(time);
+		
+		// 타이머 시간
+		timeover.setHorizontalAlignment(SwingConstants.CENTER);
+		timeover.setFont(new Font("Chalkboard", Font.PLAIN, 30));
+		timeover.setBounds(200, 150, 400, 50);
+		timeover.setVisible(false);
+		timeover.setOpaque(true);
+		timeover.setBackground(new Color(255, 255, 255, 180));
+		timeover.setForeground(Color.red);
+		contentPane.add(timeover);
 		
 		// 정보판
 		info.setBounds(775, 5, 115, 800);
@@ -186,6 +205,8 @@ public class Board {
 							board.removeAll();
 							check.dispose();
 							board.repaint();
+							timer.cancel();
+							time.setText("");
 						}
 					});
 					no.addActionListener(new ActionListener() {
@@ -215,11 +236,119 @@ public class Board {
 	}
 	
 	public void winnerMessage(String str) {
+		// 승리의 효과음 파일 열기
+		try {
+			stream1 = AudioSystem.getAudioInputStream(new File("soundTrack/minion_laugh.wav"));
+			clip1 = AudioSystem.getClip();
+			clip1.open(stream1);
+			clip1.start();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
 		win.setText(str + " Won!");
 		win.setVisible(true);
 		win.setOpaque(true);
 		win.setBackground(new Color(255, 255, 255, 180));
 		turn = DEFAULT;
+		timer.cancel();
+		time.setText("");
 		board.repaint();
 	}
+
+	public void startTime() {
+		if(leftTime!=TURN) {
+			leftTime = TURN;
+			timer.cancel();
+		}
+		TimerTask task = new TimerTask() {
+			@Override
+			public void run() {
+				if(leftTime>=0) {
+					time.setText(Integer.toString(leftTime));
+					leftTime--;
+					if(leftTime == 5) {
+						warningSound();
+					}
+				}
+				else {
+					turnShiftSound();
+					timer.cancel();
+					changeTurn();
+				}
+			}
+		};
+		
+		timer = new Timer();
+		timer.schedule(task, 0, 1000);
+	}
+	
+	private void changeTurn() {
+		if(count%4==1 || count%4==3) {
+			count+=2;
+		}
+		else {
+			count++;
+		}
+		
+		if(count%4 == 3) {
+			turn = Board.WHITE;
+			player.setText("White");
+		}
+		else if(count%4 == 1) {
+			turn = Board.BLACK;
+			player.setText("Black");
+		}
+		startTime();
+	}
+	
+	private void warningSound() {
+		// 시간 부족 효과음 넣기
+		try {
+			stream2 = AudioSystem.getAudioInputStream(new File("soundTrack/smb_warning.wav"));
+			clip2 = AudioSystem.getClip();
+			clip2.open(stream2);
+			clip2.start();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		
+		c=0;
+		Timer labelTimer = new Timer();
+		TimerTask labelTask = new TimerTask() {
+			@Override
+			public void run() {
+				if(c<6) {
+					if(c%2==0) {
+						timeover.setVisible(true);
+					}
+					else {
+						timeover.setVisible(false);
+					}
+				}
+				else {
+					labelTimer.cancel();
+				}
+				c++;
+			}
+		};
+		labelTimer.schedule(labelTask, 0, 500);
+	}
+	
+	private void turnShiftSound() {
+		// 시간 부족 효과음 넣기
+		try {
+			stream3 = AudioSystem.getAudioInputStream(new File("soundTrack/boing.wav"));
+			clip3 = AudioSystem.getClip();
+			clip3.open(stream3);
+			clip3.start();
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
 }
+
+
+
+
+
+

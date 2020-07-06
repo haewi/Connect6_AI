@@ -2,18 +2,22 @@ package edu.handong.java.round5;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 
 public class BoardPanel extends JPanel implements MouseListener {
 
@@ -22,6 +26,10 @@ public class BoardPanel extends JPanel implements MouseListener {
 	int mouseX, mouseY;
 	ArrayList<ArrayList<Stone>> stones = new ArrayList<ArrayList<Stone>>();
 	JLabel win = new JLabel("");
+	
+	// 효과음
+	AudioInputStream stream, stream2;
+	Clip clip, clip2;
 	
 	public BoardPanel(Board b) {
 		mainBoard = b;
@@ -71,6 +79,9 @@ public class BoardPanel extends JPanel implements MouseListener {
 	
 	@Override
 	public void mousePressed(MouseEvent e) {
+		
+		turn = mainBoard.turn;
+		
 		if(turn != Board.DEFAULT) {
 			if(e.getX()<20 || e.getX()>780 || e.getY()<20 || e.getY()>780) return;
 			mouseX = e.getX();
@@ -91,6 +102,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 				s.color = Color.red;
 			}
 			mainBoard.count++;
+//			System.out.println(mainBoard.count);
 			
 			if(mainBoard.count > 5) {
 				if(mainBoard.count == 6) {
@@ -104,10 +116,25 @@ public class BoardPanel extends JPanel implements MouseListener {
 				else if(mainBoard.count%4 == 1) {
 					mainBoard.turn = Board.BLACK;
 					mainBoard.player.setText("Black");
+					}
+				// timer 실행하기
+				if(mainBoard.count > 5) {
+					mainBoard.startTime();
 				}
 			}
-			stones.get((s.locate.x-40)/40).set((s.locate.y-40)/40, s);
 			
+			// 효과음 파일 열고 실행
+			try {
+				stream = AudioSystem.getAudioInputStream(new File("soundTrack/water_drop.wav"));
+				clip = AudioSystem.getClip();
+				clip.open(stream);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			clip.start();
+			
+			// 바둑돌 저장
+			stones.get((s.locate.x-40)/40).set((s.locate.y-40)/40, s);
 			int check = checkWinner(s);
 			if(check == Board.BLACK) {
 				mainBoard.winnerMessage("Black");
@@ -118,30 +145,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 			
 			this.repaint();
 		}
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	public Point getNearPoint() {
@@ -298,6 +301,31 @@ public class BoardPanel extends JPanel implements MouseListener {
 				}
 		
 		return Board.DEFAULT;
+	}
+	
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
 	}
 }
 
