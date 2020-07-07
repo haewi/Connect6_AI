@@ -44,7 +44,7 @@ public class Board {
 	public static final int WHITE = 4;
 	
 	// 한 턴에 주는 초
-	public static final int TURN = 7;
+	public static final int TURN = 15;
 	
 	// 현재 놓을 돌 종류
 	int turn = DEFAULT;
@@ -72,8 +72,10 @@ public class Board {
 	
 	/**
 	 * Launch the application.
+	 * @return 
 	 */
-	public static void main(String[] args) {
+//	public static void main(String[] args) {
+	public static void startBoard() {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -84,6 +86,7 @@ public class Board {
 			}
 		});
 	}
+//	}
 
 	/**
 	 * Create the frame.
@@ -151,6 +154,23 @@ public class Board {
 		turnInfo.setBounds(0, 30, 115, 30);
 		info.add(turnInfo);
 		
+		// start button
+		JButton startButton = new JButton("Start");
+		startButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(turn==RED) {
+					turn = BLACK;
+					player.setText("Black");
+					startTime();
+					count=0;
+				}
+			}
+		});
+		startButton.setHorizontalAlignment(SwingConstants.CENTER);
+		startButton.setFont(new Font("Chalkboard", Font.PLAIN, 30));
+		startButton.setBounds(5, 250, 105, 50);
+		info.add(startButton);
+		
 		win.setHorizontalAlignment(SwingConstants.CENTER);
 		win.setFont(new Font("Gill Sans", Font.PLAIN,  70));
 		win.setForeground(Color.red);
@@ -174,6 +194,13 @@ public class Board {
 					win.setVisible(false);
 					board.removeAll();
 					board.repaint();
+					if(clip1!=null) clip1.stop();
+					stream1 = null;
+					stream2 = null;
+					stream3 = null;
+					clip1 = null;
+					clip2 = null;
+					clip3 = null;
 				}
 				else {
 					JFrame check = new JFrame();
@@ -291,12 +318,12 @@ public class Board {
 		}
 		
 		if(count%4 == 3) {
-			turn = Board.WHITE;
-			player.setText("White");
-		}
-		else if(count%4 == 1) {
 			turn = Board.BLACK;
 			player.setText("Black");
+		}
+		else if(count%4 == 1) {
+			turn = Board.WHITE;
+			player.setText("White");
 		}
 		startTime();
 	}

@@ -101,24 +101,19 @@ public class BoardPanel extends JPanel implements MouseListener {
 			else if(turn == Board.RED) {
 				s.color = Color.red;
 			}
-			mainBoard.count++;
 //			System.out.println(mainBoard.count);
 			
-			if(mainBoard.count > 5) {
-				if(mainBoard.count == 6) {
-					mainBoard.turn = Board.BLACK;
-					mainBoard.player.setText("Black");
-				}
-				else if(mainBoard.count%4 == 3) {
+			if(mainBoard.turn != Board.RED) {
+				mainBoard.count++;
+				
+				if(mainBoard.count%4 == 1) {
 					mainBoard.turn = Board.WHITE;
 					mainBoard.player.setText("White");
+					mainBoard.startTime();
 				}
-				else if(mainBoard.count%4 == 1) {
+				else if(mainBoard.count%4 == 3) {
 					mainBoard.turn = Board.BLACK;
 					mainBoard.player.setText("Black");
-					}
-				// timer 실행하기
-				if(mainBoard.count > 5) {
 					mainBoard.startTime();
 				}
 			}
