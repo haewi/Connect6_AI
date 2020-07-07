@@ -201,7 +201,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		}
 //		System.out.println(count);
 		
-		if(count >= 6) {
+		if(count == 6) {
 			if(s.color == Color.black) return Board.BLACK;
 			if(s.color == Color.white) return Board.WHITE;
 		}
@@ -232,7 +232,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		}
 //		System.out.println(count);
 		
-		if(count >= 6) {
+		if(count == 6) {
 			if(s.color == Color.black) return Board.BLACK;
 			if(s.color == Color.white) return Board.WHITE;
 		}
@@ -261,7 +261,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		}
 //		System.out.println(count);
 		
-		if(count >= 6) {
+		if(count == 6) {
 			if(s.color == Color.black) return Board.BLACK;
 			if(s.color == Color.white) return Board.WHITE;
 		}
@@ -290,7 +290,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 				}
 //				System.out.println(count);
 				
-				if(count >= 6) {
+				if(count == 6) {
 					if(s.color == Color.black) return Board.BLACK;
 					if(s.color == Color.white) return Board.WHITE;
 				}
