@@ -38,13 +38,12 @@ public class Board {
 	
 	// 놓을 돌 종류
 	public static final int DEFAULT = 0;
-	public static final int CLEAR = 1;
-	public static final int RED = 2;
-	public static final int COM = 3;
-	public static final int USER = 4;
+	public static final int RED = 1;
+	public static final int COM = 2;
+	public static final int USER = 3;
 	
 	// 한 턴에 주는 초
-	public static final int TURN = 15;
+	public static final int TURN = 150;
 	
 	// 현재 놓을 돌 종류
 	int turn = DEFAULT;
@@ -124,7 +123,7 @@ public class Board {
 		// 바둑
 		board = new BoardPanel(this);
 		board.setLayout(null);
-		board.setBounds(5, 5, 762, 800);
+		board.setBounds(5, 5, 772, 800);
 		board.setOpaque(false);
 		mainFrame.getContentPane().add(board);
 		board.addMouseListener(board);
@@ -150,7 +149,7 @@ public class Board {
 		// 타이머 시간
 		timeover.setHorizontalAlignment(SwingConstants.CENTER);
 		timeover.setFont(new Font("Chalkboard", Font.PLAIN, 30));
-		timeover.setBounds(200, 150, 400, 50);
+		timeover.setBounds(200, 120, 400, 50);
 		timeover.setVisible(false);
 		timeover.setOpaque(true);
 		timeover.setBackground(new Color(255, 255, 255, 180));
@@ -190,8 +189,8 @@ public class Board {
 					else {
 						turn = USER;
 						player.setText("User");
+						startTime();
 					}
-					startTime();
 					count=0;
 				}
 			}
@@ -263,6 +262,7 @@ public class Board {
 							check.dispose();
 							board.repaint();
 							timer.cancel();
+							timer.purge();
 							time.setText("");
 						}
 					});
@@ -308,6 +308,7 @@ public class Board {
 		win.setBackground(new Color(255, 255, 255, 180));
 		turn = DEFAULT;
 		timer.cancel();
+		timer.purge();
 		time.setText("");
 		board.repaint();
 	}
@@ -316,6 +317,8 @@ public class Board {
 		if(leftTime!=TURN) {
 			leftTime = TURN;
 			timer.cancel();
+			timer.purge();
+//			System.out.println("cancel");
 		}
 		TimerTask task = new TimerTask() {
 			@Override
@@ -330,6 +333,7 @@ public class Board {
 				else {
 					turnShiftSound();
 					timer.cancel();
+					timer.purge();
 					changeTurn();
 				}
 			}
@@ -337,6 +341,7 @@ public class Board {
 		
 		timer = new Timer();
 		timer.schedule(task, 0, 1000);
+//		System.out.println("start");
 	}
 	
 	private void changeTurn() {
@@ -349,13 +354,14 @@ public class Board {
 		
 		if(count%4 == 3) {
 			turn = Board.COM;
-			player.setText("Black");
+			player.setText("Computer");
 		}
 		else if(count%4 == 1) {
 			turn = Board.USER;
-			player.setText("White");
+			player.setText("User");
 		}
 		startTime();
+		clip2.stop();
 	}
 	
 	private void warningSound() {
@@ -384,6 +390,7 @@ public class Board {
 				}
 				else {
 					labelTimer.cancel();
+					labelTimer.purge();
 				}
 				c++;
 			}
