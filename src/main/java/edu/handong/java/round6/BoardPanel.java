@@ -113,25 +113,49 @@ public class BoardPanel extends JPanel implements MouseListener {
 			
 			// 바둑돌 저장
 			stones.get((s.locate.x-40)/40).set((s.locate.y-40)/40, s);
+			
+			// 승부 판단
 			int check = checkWinner(s);
 			if(check == Board.COM) {
-				mainBoard.winnerMessage("Black");
+				mainBoard.winnerMessage("Computer");
 			}
 			else if(check == Board.USER) {
-				mainBoard.winnerMessage("White");
+				mainBoard.winnerMessage("User");
 			}
 			
 			this.repaint();
 		}
 	}
 	
+	int x=3,  y=3;
 	public void computerTurn() {
 		System.out.println("computer Turn");
+		
+		Stone s = new Stone();
+		s.color = mainBoard.computer;
+		s.locate = new Point(40+x*40, 40+y*40);
+		stones.get(x).set(y, s);
+		x++;
+		
+		int check = checkWinner(s);
+		if(check == Board.COM) {
+			mainBoard.winnerMessage("Computer");
+		}
+		else if(check == Board.USER) {
+			mainBoard.winnerMessage("User");
+		}
+		
+		this.repaint();
+		
+		// TODO
+		// 돌 2개 생성
+		// 돌 2개 정보 넣기
+		// 돌 2개 추가
 		
 		// 돌 개수 추가
 		mainBoard.count++;
 		
-		// User 차례가 되었으면 넘기기 아니면 다시 한번 계산하기
+		// User 차례가 되었으면 넘기기
 		if(mainBoard.count%4 == 1 || mainBoard.count%4 == 3) {
 			mainBoard.turn = Board.USER;
 			mainBoard.player.setText("USER");
@@ -176,6 +200,42 @@ public class BoardPanel extends JPanel implements MouseListener {
 		Point current = s.locate;
 		
 		// 가로 확인
+		int count=checkHorizontal(s, current);
+		
+		if(count == 6) {
+			if(s.color.equals(mainBoard.computer)) return Board.COM;
+			if(s.color.equals(mainBoard.user)) return Board.USER;
+		}
+		
+		// 세로 확인
+		count = checkVertical(s, current);
+		
+		if(count == 6) {
+			if(s.color.equals(mainBoard.computer)) return Board.COM;
+			if(s.color.equals(mainBoard.user)) return Board.USER;
+		}
+		
+		// 대각선 확인
+		count = checkRightDiagonal(s, current);
+		
+		if(count == 6) {
+			if(s.color.equals(mainBoard.computer)) return Board.COM;
+			if(s.color.equals(mainBoard.user)) return Board.USER;
+		}
+		
+		// 반대각선 확인
+		count = checkLeftDiagonal(s, current);
+
+		if(count == 6) {
+			if(s.color.equals(mainBoard.computer)) return Board.COM;
+			if(s.color.equals(mainBoard.user)) return Board.USER;
+		}
+		
+		return Board.DEFAULT;
+	}
+	
+	// 가로 확인
+	private int checkHorizontal(Stone s, Point current) {
 		int count=1;
 		for(int x=current.x+40; x<current.x+6*40; x+=40) {
 //			System.out.println((x-40)/40 + " " + (current.y-40)/40);
@@ -200,16 +260,14 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 //		System.out.println(count);
-		
-		if(count == 6) {
-			if(s.color.equals(mainBoard.computer)) return Board.COM;
-			if(s.color.equals(mainBoard.user)) return Board.USER;
-		}
-		
-		//세로 확인
-		count=1;
+		return count;
+	}
+	
+	//세로 확인
+	private int checkVertical(Stone s, Point current) {
+		int count=1;
 		for(int y=current.y+40; y<current.y+6*40; y+=40) {
-//			System.out.println((current.x-40)/40 + " " + (y-40)/40);
+//					System.out.println((current.x-40)/40 + " " + (y-40)/40);
 			if((y-40)/40<0 || (y-40)/40 > 18) break;
 			else if(stones.get((current.x-40)/40).get((y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((current.x-40)/40).get((y-40)/40).color)) {
@@ -220,7 +278,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 		for(int y=current.y-40; y>current.y-6*40; y-=40) {
-//			System.out.println((current.x-40)/40 + " " + (y-40)/40);
+//					System.out.println((current.x-40)/40 + " " + (y-40)/40);
 			if((y-40)/40<0 || (y-40)/40 > 18) break;
 			else if(stones.get((current.x-40)/40).get((y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((current.x-40)/40).get((y-40)/40).color)) {
@@ -230,15 +288,13 @@ public class BoardPanel extends JPanel implements MouseListener {
 				break;
 			}
 		}
-//		System.out.println(count);
-		
-		if(count == 6) {
-			if(s.color.equals(mainBoard.computer)) return Board.COM;
-			if(s.color.equals(mainBoard.user)) return Board.USER;
-		}
-		
-		// 대각선 확인
-		count=1;
+//				System.out.println(count);
+		return count;
+	}
+	
+	// 대각선 확인
+	private int checkRightDiagonal(Stone s, Point current) {
+		int count=1;
 		for(int x=current.x, y=current.y, t=40; t<6*40; t+=40) {
 			if((x+t-40)/40<0 || (x+t-40)/40 > 18 || (y+t-40)/40<0 || (y+t-40)/40 > 18) break;
 			else if(stones.get((x+t-40)/40).get((y+t-40)/40).color==null) break;
@@ -260,14 +316,12 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 //		System.out.println(count);
-		
-		if(count == 6) {
-			if(s.color.equals(mainBoard.computer)) return Board.COM;
-			if(s.color.equals(mainBoard.user)) return Board.USER;
-		}
-		
-		// 반대각선 확인
-		count=1;
+		return count;
+	}
+	
+	// 반대각선 확인
+	private int checkLeftDiagonal(Stone s, Point current) {
+		int count=1;
 		for(int x=current.x, y=current.y, t=40; t<6*40; t+=40) {
 			if((x+t-40)/40<0 || (x+t-40)/40 > 18 || (y-t-40)/40<0 || (y-t-40)/40 > 18) break;
 			else if(stones.get((x+t-40)/40).get((y-t-40)/40).color==null) break;
@@ -289,13 +343,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 //				System.out.println(count);
-
-		if(count == 6) {
-			if(s.color.equals(mainBoard.computer)) return Board.COM;
-			if(s.color.equals(mainBoard.user)) return Board.USER;
-		}
-		
-		return Board.DEFAULT;
+		return count;
 	}
 	
 
