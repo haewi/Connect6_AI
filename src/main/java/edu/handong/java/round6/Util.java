@@ -5,7 +5,7 @@ import java.awt.Point;
 
 public class Util {
 
-	public static final int CLEAR=-1;
+	public static final int CLEAR=0;
 	
 	Board mainBoard;
 	
@@ -21,28 +21,27 @@ public class Util {
 			// 자신의 최대 가중치 및 그 위치(Node) 돌리기
 			position = getBiggestWeight(position, color);
 			
-			System.out.println("depth=0 x, y: " + position.p.x + " " + position.p.y);
-			for(int x=0; x<19; x++) {
-				for(int y=0; y<19; y++) {
-					System.out.print(position.st[y][x] + "  ");
-				}
-				System.out.println();
-			}
-			System.out.println();
-			
 			return position;
 		}
 		
 		int currentTurn;
-		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
-		else currentTurn = Board.USER;
+		Color nextColor;
+		if(color.equals(mainBoard.computer)) {
+			currentTurn = Board.COM;
+			nextColor = mainBoard.user;
+		}
+		else {
+			currentTurn = Board.USER;
+			nextColor = mainBoard.computer;
+		}
 		
 		// 자식 만들기 (가중치에 맞추어서) -> maximizingPlayer가 사실이면 mainBoard.computer에 맞추어서 아님 mainBoard.user에 맞추어서
 		// 자신 link에 넣기
 		makeChild(position, color, currentTurn);
-
+		
 		double maxEval = Integer.MIN_VALUE;
 		double minEval = Integer.MAX_VALUE;
+		
 
 		if(maximizingPlayer) {
 			Node tmp = null;
@@ -57,21 +56,12 @@ public class Util {
 			}
 			position.p = tmp.p;
 			position.score = maxEval;
-			
-			System.out.println("true");
-			for(int x=0; x<19; x++) {
-				for(int y=0; y<19; y++) {
-					System.out.print(position.st[y][x] + "  ");
-				}
-				System.out.println();
-			}
-			System.out.println();
 			return position;
 		}
 		else {
 			Node tmp = null;
 			for(int i=0; i<position.link.size(); i++) {
-				tmp = minimax(position.link.get(i), depth-1, alpha, beta, true, color);
+				tmp = minimax(position.link.get(i), depth-1, alpha, beta, true, nextColor);
 				double eval = tmp.score;
 				minEval = Math.min(minEval, eval);
 				beta = Math.min(beta, eval);
@@ -81,55 +71,9 @@ public class Util {
 			}
 			position.p = tmp.p;
 			position.score = minEval;
-
-			System.out.println("false");
-			for(int x=0; x<19; x++) {
-				for(int y=0; y<19; y++) {
-					System.out.print(position.st[y][x] + "  ");
-				}
-				System.out.println();
-			}
-			System.out.println();
 			return position;
 		}
 	}
-
-//	public static Node minimax2(Node position, double depth, double alpha, double beta, boolean maximizingPlayer) {
-//		// 자신의 최대 가중치 계산
-//		if(depth == 0 || gameover()) {
-//			// 자신의 최대 가중치 및 그 위치(Node) 돌리기
-//			return position;
-//		}
-//
-//		double maxEval = Integer.MIN_VALUE;
-//		double minEval = Integer.MAX_VALUE;
-//
-//		if(maximizingPlayer) {
-//			for(int i=0; i<position.link.size(); i++) {
-//				int eval = minimax1(position.link.get(i), depth-1, alpha, beta, !maximizingPlayer).score;
-//				maxEval = Math.max(maxEval, eval);
-//				alpha = Math.max(alpha, eval);
-//				if(beta <= alpha) {
-//					break;
-//				}
-//			}
-//			//			System.out.println(maxEval);
-//			return maxEval;
-//		}
-//		else {
-//			for(int i=0; i<position.link.size(); i++) {
-//				int eval = minimax1(position.link.get(i), depth-1, alpha, beta, !maximizingPlayer).score;
-//				minEval = Math.min(minEval, eval);
-//				beta = Math.min(beta, eval);
-//				if(beta <= alpha) {
-//					break;
-//				}
-//			}
-//			//			System.out.println(minEval);
-//			return minEval;
-//		}
-//	}
-
 
 	// 주어진 Node 안의 배열로 Color에 따른 가중치를 계산하여 가장 큰 값을 리턴
 	public Node getBiggestWeight(Node position, Color c) {
@@ -142,10 +86,10 @@ public class Util {
 			for(int x=0; x<19; x++) {
 				if(st[x][y]>max) {
 					max = st[x][y];
-					position.p = new Point(x, y);
 				}
 			}
 		}
+		
 		
 		position.score = max;
 		return position;
@@ -178,23 +122,39 @@ public class Util {
 			}
 		}
 		
+		System.out.println("p1, p2: " + p1.x + " " + p1.y + " - " + p2.x + ' ' + p2.y);
+		
 		Node child1 = new Node();
-		child1.st = parent.st.clone();
+		child1.st = deepCopy(parent.st);
 		child1.st[p1.x][p1.y] = currentTurn;
+		child1.p = p1;
 		
 		Node child2 = new Node();
-		child2.st = parent.st.clone();
+		child2.st = deepCopy(parent.st);
 		child2.st[p2.x][p2.y] = currentTurn;
+		child2.p = p2;
 		
 		parent.link.add(child1);
 		parent.link.add(child2);
+	}
+	
+	public static int[][] deepCopy(int[][] st){
+		int[][] go = new int[19][19];
+		
+		for(int x=0; x<19; x++) {
+			for(int y=0; y<19; y++) {
+				go[x][y] = st[x][y];
+			}
+		}
+		
+		return go;
 	}
 	
 	private boolean gameover() {
 		return false;
 	}
 
-	private double[][] getAllWeight(int[][] s, Color color) {
+	public double[][] getAllWeight(int[][] s, Color color) {
 		double[][] all = new double[19][19];
 //		weight = new double[19][19];
 
@@ -207,21 +167,21 @@ public class Util {
 		double[][] right = analyzeRightDiagonal(s, color);
 		double[][] right2 = analyzeRightDiagonalReverse(s, color);
 
-		//		if(color == mainBoard.computer) System.out.println("computer");
-		//		else System.out.println("user");
+//		if(color == mainBoard.computer) System.out.println("computer");
+//		else System.out.println("user");
 		for(int y=0; y<19; y++) {
 			for(int x=0; x<19; x++) {
 				all[x][y] = hor[x][y] + ver[x][y] + left[x][y] + right[x][y] + hor2[x][y] + ver2[x][y] + left2[x][y] + right2[x][y];
-//				if(st[x][y] != CLEAR) {
-//					all[x][y] = Integer.MIN_VALUE;
-////					weight[x][y] = Integer.MIN_VALUE;//Integer.MIN_VALUE;
-//				}
+				if(s[x][y] != CLEAR) {
+					all[x][y] = Integer.MIN_VALUE;
+//					weight[x][y] = Integer.MIN_VALUE;//Integer.MIN_VALUE;
+				}
 //				System.out.print(all[x][y] + " ");
 //				System.out.print((int) weight[x][y] + "  ");
 			}
-			//			System.out.println();
+//			System.out.println();
 		}
-		//		System.out.println();
+//		System.out.println();
 
 		return all;
 	}
@@ -271,7 +231,7 @@ public class Util {
 		for (int y = 7; y < 12; y++) {
 			for (int x = 7; x < 12; x++) {
 				hor[x][y] += 0.5;
-				//					weight[x][y] += 0.5;
+//					weight[x][y] += 0.5;
 			}
 		}
 
@@ -348,7 +308,7 @@ public class Util {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					ver[x][y] = score;
-					//		    			weight[x][y] += score;
+//		    			weight[x][y] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -449,7 +409,7 @@ public class Util {
 				openEnds++;
 				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 				left[x][y] = score;
-				//						weight[x][y] += score;
+//				weight[x][y] += score;
 				countConsecutive = 0;
 				openEnds = 1;
 			}
@@ -501,7 +461,7 @@ public class Util {
 			openEnds++;
 			score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 			left[x][y] = score;
-			//						weight[x][y] += score;
+//			weight[x][y] += score;
 			countConsecutive = 0;
 			openEnds = 1;
 		}
@@ -553,7 +513,7 @@ public class Util {
 				openEnds++;
 				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 				right[y][x] = score;
-				//						weight[y][x] += score;
+//						weight[y][x] += score;
 				countConsecutive = 0;
 				openEnds = 1;
 			}
@@ -605,7 +565,7 @@ public class Util {
 			openEnds++;
 			score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 			right[y][x] = score;
-			//						weight[y][x] += score;
+//						weight[y][x] += score;
 			countConsecutive = 0;
 			openEnds = 1;
 		}
