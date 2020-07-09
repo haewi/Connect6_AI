@@ -32,7 +32,8 @@ public class BoardPanel extends JPanel implements MouseListener {
 	int[][] st = new int[19][19];
 	
 	// 전제 가중치
-	double[][] weight = new double[19][19];
+//	double[][] weight = new double[19][19];
+	
 	JLabel win = new JLabel("");
 	
 	// 효과음
@@ -114,12 +115,13 @@ public class BoardPanel extends JPanel implements MouseListener {
 			stones.get((s.locate.x-40)/40).set((s.locate.y-40)/40, s);
 			st[(s.locate.x-40)/40][(s.locate.y-40)/40] = color;
 			
-			// 컴퓨터가 흑일 때 count 조정해주기 
-			if(mainBoard.computer.equals(Color.black) && mainBoard.count==0) mainBoard.count++;
+			// 컴퓨터가 흑일 때 count 조정해주기
+			if(mainBoard.turn != Board.RED && mainBoard.computer.equals(Color.black) && mainBoard.count==0) mainBoard.count++;
 			
 			// 순서 바꾸어주기
 			if(mainBoard.turn != Board.RED) {
 				mainBoard.count++;
+//				System.out.println("user: " + mainBoard.count);
 				if(mainBoard.count%4 == 1 || mainBoard.count%4 == 3) {
 					if(mainBoard.turn == Board.USER) {
 						mainBoard.turn = Board.COM;
@@ -156,11 +158,11 @@ public class BoardPanel extends JPanel implements MouseListener {
 		double finish = Integer.MIN_VALUE;
 		for(int x=0; x<19; x++) {
 			for(int y=0; y<19; y++) {
-				if(weight[x][y] > 100000) { // 승리 가능할 곳 찾기
+				if(com[x][y] > 100000) { // 승리 가능할 곳 찾기
 					p = new Point(x, y);
 				}
-				if(weight[x][y] > finish) { // 최대 가중치 위치 찾기
-					finish = weight[x][y];
+				if(com[x][y] > finish) { // 최대 가중치 위치 찾기
+					finish = com[x][y];
 					tmp = new Point(x, y);
 				}
 			}
@@ -172,7 +174,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 			for(int x=0; x<19; x++) {
 				for(int y=0; y<19; y++) {
 	//				System.out.print(user[y][x] + "  ");
-					if(weight[x][y] > 100000) {
+					if(user[x][y] > 100000) {
 						p = new Point(x, y);
 					}
 				}
@@ -195,6 +197,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		// 돌 개수 추가
 		mainBoard.count++;
 		
+//		System.out.println("com: " + mainBoard.count);
 //		System.out.println("com Count: " + mainBoard.count);
 		
 		// 우승 확인
@@ -351,7 +354,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 
 	private double[][] getAllWeight(Color color) {
 		double[][] all = new double[19][19];
-		weight = new double[19][19];
+//		weight = new double[19][19];
 		
 		double[][] hor = analyzeHorizontal(color);
 		double[][] hor2 = analyzeHorizontalReverse(color);
@@ -369,7 +372,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 				all[x][y] = hor[x][y] + ver[x][y] + left[x][y] + right[x][y] + hor2[x][y] + ver2[x][y] + left2[x][y] + right2[x][y];
 				if(st[x][y] != CLEAR) {
 					all[x][y] = Integer.MIN_VALUE;
-					weight[x][y] = -1;//Integer.MIN_VALUE;
+//					weight[x][y] = Integer.MIN_VALUE;//Integer.MIN_VALUE;
 				}
 //				System.out.print(all[x][y] + " ");
 //				System.out.print((int) weight[x][y] + "  ");
@@ -400,11 +403,16 @@ public class BoardPanel extends JPanel implements MouseListener {
 				if (st[x][y] == currentTurn) { // 돌이 검정색이고 되면 연속점 1증가
 					countConsecutive++;
 				}
+//				else if (st[x][y] == CLEAR && countConsecutive > 0 && st[x+1][y+1] == currentTurn) { // 연속점에서 열린 점으로 끝나고 그 다음에 자신의 돌이 있는 경우
+//					score = connect6ShapeScore(countConsecutive+1, openEnds+1, currentTurn);
+//					hor[x][y] = score;
+//					weight[x][y] += score;
+//				}
 				else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					hor[x][y] = score;
-					weight[x][y] += score;
+//					weight[x][y] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -426,7 +434,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		for (int y = 7; y < 12; y++) {
 			for (int x = 7; x < 12; x++) {
 				hor[x][y] += 0.5;
-				weight[x][y] += 0.5;
+//				weight[x][y] += 0.5;
 			}
 		}
 		
@@ -457,7 +465,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 						openEnds++;
 						score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 						hor[x][y] += score;
-						weight[x][y] += score;
+//						weight[x][y] += score;
 						countConsecutive = 0;
 						openEnds = 1;
 					}
@@ -503,7 +511,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 	    			openEnds++;
 	    			score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 	    			ver[x][y] = score;
-	    			weight[x][y] += score;
+//	    			weight[x][y] += score;
 	    			countConsecutive = 0;
 	    			openEnds = 1;
 	    		}
@@ -549,7 +557,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					ver[x][y] = score;
-					weight[x][y] += score;
+//					weight[x][y] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -604,7 +612,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					left[x][y] = score;
-					weight[x][y] += score;
+//					weight[x][y] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -656,7 +664,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					left[x][y] = score;
-					weight[x][y] += score;
+//					weight[x][y] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -708,7 +716,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					right[y][x] = score;
-					weight[y][x] += score;
+//					weight[y][x] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
@@ -760,7 +768,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 					right[y][x] = score;
-					weight[y][x] += score;
+//					weight[y][x] += score;
 					countConsecutive = 0;
 					openEnds = 1;
 				}
