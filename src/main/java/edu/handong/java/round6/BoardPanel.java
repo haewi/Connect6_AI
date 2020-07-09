@@ -89,15 +89,11 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 			else if(turn == Board.RED) {
 				s.color = Color.red;
-				color = Board.COM;
+				color = Board.RED;
 			}
 			
 			s.locate = getNearPoint(); // 가장 가까운 점 찾기
 			if(stones.get((s.locate.x-40)/40).get((s.locate.y-40)/40).color != null) return; // 이미 돌이 존재하는 위치이면 무시
-			
-//			if(mainBoard.count > 5) {
-//				System.out.println(analyzeHorizontal(Color.black).p.x + " " + analyzeHorizontal(Color.black).p.y);
-//			}
 			
 			// 효과음 파일 열고 실행
 			try {
@@ -133,10 +129,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 				mainBoard.winnerMessage("User");
 			}
 			
-//			System.out.println(analyzeHorizontal(Color.black));
-//			if(analyzeHorizontal(Color.black) != null) {
-//				System.out.println(analyzeHorizontal(Color.black).p.x + " " + analyzeHorizontal(Color.black).p.y);
-//			}
 			this.repaint();
 		}
 	}
@@ -147,16 +139,43 @@ public class BoardPanel extends JPanel implements MouseListener {
 		s.color = mainBoard.computer;
 		
 		// 돌 위치 선택
-		Point p;
+		Point p = null;
 		
-//		System.out.println(analyzeRightDiagonal(s.color).score);
-		p = getHeavyPoint();
+		// 방어
+		double[][] user = getAllWeight(mainBoard.user);
+		for(int x=0; x<19; x++) {
+			for(int y=0; y<19; y++) {
+//				System.out.print(user[y][x] + "  ");
+				if(user[x][y] > 100000) {
+					p = new Point(x, y);
+				}
+			}
+//			System.out.println();
+		}
+//		System.out.println();
+		
+		// 방어할게 없으면 공격
+		if(p==null) {
+			double[][] com = getAllWeight(mainBoard.computer);
+			double max = Integer.MIN_VALUE;
+			for(int x=0; x<19; x++) {
+				for(int y=0; y<19; y++) {
+//					System.out.print(com[y][x] + "  ");
+					if(com[x][y] > max) {
+						p = new Point(x, y);
+						max = com[x][y];
+					}
+				}
+//				System.out.println();
+			}
+//			System.out.println();
+		}
+		
 		s.locate = new Point(40+p.x*40, 40+p.y*40);
 		
 		// 돌 저장
 		stones.get(p.x).set(p.y, s);
 		st[p.x][p.y] = Board.COM;
-//		System.out.println(p.x + " " + p.y);
 		
 		int check = checkWinner(s);
 		if(check == Board.COM) {
@@ -311,74 +330,134 @@ public class BoardPanel extends JPanel implements MouseListener {
 	}
 	
 
-	private Point getHeavyPoint() {
-		return null;
+	private double[][] getAllWeight(Color color) {
+		double[][] all = new double[19][19];
+		
+		double[][] hor = analyzeHorizontal(color);
+		double[][] hor2 = analyzeHorizontalReverse(color);
+		double[][] ver = analyzeVertical(color);
+		double[][] ver2 = analyzeVerticalReverse(color);
+		double[][] left = analyzeLeftDiagonal(color);
+		double[][] left2 = analyzeLeftDiagonalReverse(color);
+		double[][] right = analyzeRightDiagonal(color);
+		double[][] right2 = analyzeRightDiagonalReverse(color);
+		
+		for(int y=0; y<19; y++) {
+			for(int x=0; x<19; x++) {
+				all[x][y] = hor[x][y] + ver[x][y] + left[x][y] + right[x][y] + hor2[x][y] + ver2[x][y] + left2[x][y] + right2[x][y];
+				if(st[x][y] != CLEAR) all[x][y] = Integer.MIN_VALUE;
+//				System.out.print(all[x][y] + " ");
+				
+			}
+//			System.out.println();
+		}
+//		System.out.println();
+		
+		return all;
 	}
 	
 	// 가로 가중치 계산
-	public Node analyzeHorizontal(Color color) {
-	    double score = Double.MIN_VALUE;
-	    int countConsecutive = 0;
-	    int openEnds = 0;
-	    
-	    int currentTurn;
+	public double[][] analyzeHorizontal(Color color) {
+		double score = Double.MIN_VALUE;
+		int countConsecutive = 0;
+		int openEnds = 0;
 
-	    if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+		int currentTurn;
+
+		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
 		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
 		else return null;
-	    
-	    Node node = new Node();
-	    Point p = new Point(-1, -1);
-	    
-	    for (int y = 0; y < 19; y++) {
-	       for (int x = 0; x < 19; x++) {
-	          if (st[x][y] == currentTurn)                           // 돌이 검정색이 되면 연속점 1증가
-	             countConsecutive++;
-	          else if (st[x][y] == CLEAR && countConsecutive > 0) {   // 연속점에서 열린 점으로 끝났을 경우
-	             openEnds++;
-	             score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	             if(score>node.score) {
-	            	 node.score = score;
-	            	 p.x = x;
-	            	 p.y = y;
-	             }
-	             countConsecutive = 0;
-	             openEnds = 1;
-	          }
-	          else if (st[x][y] ==CLEAR)                        // 빈 점이 그냥 등장할 경우
-	             openEnds = 1;
-	          else if (countConsecutive > 0) {                  // 연속점이 다른 돌에 만나서 끝났을 경우
-//	             score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-//	             if(score>node.score) {
-//	            	 node.score = score;
-//	            	 p.x = j;
-//	            	 p.y = i;
-//	             }
-	             countConsecutive = 0;
-	             openEnds = 0;
-	          }
-	          else openEnds = 0;                              // 빈 점이 벽에 만나서 끝났을 경우
-	       }
-	       if (countConsecutive > 0)                           // 연속점이 벽에 만나서 끝났을 경우
-	          score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	       countConsecutive = 0;
-	       openEnds = 0;
-	    }
-//	    System.out.println(score);
-	    if(mainBoard.count == 0 && p.x==-1) {
-	    	if(st[9][9]==0) {
-//	    		System.out.println(st[9][9]);
-	    		node.p = new Point(9, 9);
-	    	}
-	    }
-	    else {
-	    	node.p = p;
-	    }
-	    return node;
-	 }
+
+		double[][] hor = new double[19][19];
+		
+		for (int y = 0; y < 19; y++) {
+			for (int x = 0; x < 19; x++) {
+				
+				if (st[x][y] == currentTurn) {// 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					hor[x][y] = Integer.MIN_VALUE;
+				}
+				else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					hor[x][y] += score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[x][y] ==CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					hor[x][y] = Integer.MIN_VALUE;
+					countConsecutive = 0;
+					openEnds = 0;
+				}
+				else openEnds = 0; // 빈 점이 벽에 만나서 끝났을 경우
+			}
+			if (countConsecutive > 0) { // 연속점이 벽에 만나서 끝났을 경우
+				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+			}
+			countConsecutive = 0;
+			openEnds = 0;
+		}
+
+		for (int y = 7; y < 12; y++) {
+			for (int x = 7; x < 12; x++) {
+				hor[x][y] += 0.5;
+			}
+		}
+		
+		return hor;
+	}
+	
+	// 가로 가중치 계산 (반대 방향)
+		public double[][] analyzeHorizontalReverse(Color color) {
+			double score = Double.MIN_VALUE;
+			int countConsecutive = 0;
+			int openEnds = 0;
+
+			int currentTurn;
+
+			if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+			else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
+			else return null;
+
+			double[][] hor = new double[19][19];
+			
+			for (int y = 0; y < 19; y++) {
+				for (int x = 18; x >= 0 ; x--) {
+					
+					if (st[x][y] == currentTurn) {// 돌이 검정색이 되면 연속점 1증가
+						countConsecutive++;
+						hor[x][y] = Integer.MIN_VALUE;
+					}
+					else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+						openEnds++;
+						score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+						hor[x][y] += score;
+						countConsecutive = 0;
+						openEnds = 1;
+					}
+					else if (st[x][y] ==CLEAR) // 빈 점이 그냥 등장할 경우
+						openEnds = 1;
+					else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+						hor[x][y] = Integer.MIN_VALUE;
+						countConsecutive = 0;
+						openEnds = 0;
+					}
+					else openEnds = 0; // 빈 점이 벽에 만나서 끝났을 경우
+				}
+				if (countConsecutive > 0) { // 연속점이 벽에 만나서 끝났을 경우
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+				}
+				countConsecutive = 0;
+				openEnds = 0;
+			}
+			
+			return hor;
+		}
 	
 	// 세로 가중치 계산
-	public Node analyzeVertical(Color color) {
+	public double[][] analyzeVertical(Color color) {
 	    double score = Double.MIN_VALUE;
 	    int countConsecutive = 0;
 	    int openEnds = 0;
@@ -389,60 +468,92 @@ public class BoardPanel extends JPanel implements MouseListener {
 		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
 		else return null;
 	    
-	    Node node = new Node();
-	    Point p = new Point(-1, -1);
+	    double[][] ver = new double[19][19];
 	    
 	    for (int x = 0; x < 19; x++) {
-	       for (int y = 0; y < 19; y++) {
-	          if (st[x][y] == currentTurn)                           // 돌이 검정색이 되면 연속점 1증가
-	             countConsecutive++;
-	          else if (st[x][y] == CLEAR && countConsecutive > 0) {   // 연속점에서 열린 점으로 끝났을 경우
-	             openEnds++;
-	             score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	             if(score>node.score) {
-	            	 node.score = score;
-	            	 p.x = x;
-	            	 p.y = y;
-	             }
-	             countConsecutive = 0;
-	             openEnds = 1;
-	          }
-	          else if (st[x][y] ==CLEAR) // 빈 점이 그냥 등장할 경우
-	             openEnds = 1;
-	          else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
-//	             score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-//	             if(score>node.score) {
-//	            	 node.score = score;
-//	            	 p.x = j;
-//	            	 p.y = i;
-//	             }
-	             countConsecutive = 0;
-	             openEnds = 0;
-	          }
-	          else { // 빈 점이 벽에 만나서 끝났을 경우
-	        	  openEnds = 0;
-	          }
-	       }
-	       if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
-	          score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	       countConsecutive = 0;
-	       openEnds = 0;
-	    }
-//	    System.out.println(score);
-	    if(mainBoard.count == 0 && p.x==-1) {
-	    	if(st[9][9]==0) {
-//	    		System.out.println(st[9][9]);
-	    		node.p = new Point(9, 9);
+	    	for (int y = 0; y < 19; y++) {
+	    		
+	    		if (st[x][y] == currentTurn){ // 돌이 검정색이 되면 연속점 1증가
+	    			countConsecutive++;
+	    			ver[x][y] = Integer.MIN_VALUE;
+	    		}
+	    		else if (st[x][y] == CLEAR && countConsecutive > 0) {   // 연속점에서 열린 점으로 끝났을 경우
+	    			openEnds++;
+	    			score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+	    			ver[x][y] = score;
+	    			countConsecutive = 0;
+	    			openEnds = 1;
+	    		}
+	    		else if (st[x][y] ==CLEAR) // 빈 점이 그냥 등장할 경우
+	    			openEnds = 1;
+	    		else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+//	    			}
+	    			ver[x][y] = Integer.MIN_VALUE;
+	    			countConsecutive = 0;
+	    			openEnds = 0;
+	    		}
+	    		else { // 빈 점이 벽에 만나서 끝났을 경우
+	    			openEnds = 0;
+	    		}
 	    	}
+	    	if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
+	    		score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+	    	countConsecutive = 0;
+	    	openEnds = 0;
 	    }
-	    else {
-	    	node.p = p;
-	    }
-	    return node;
-	 }
+	    return ver;
+	}
+	
+	// 세로 가중치 계산 (반대 방향)
+	public double[][] analyzeVerticalReverse(Color color) {
+		double score = Double.MIN_VALUE;
+		int countConsecutive = 0;
+		int openEnds = 0;
+
+		int currentTurn;
+
+		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
+		else return null;
+
+		double[][] ver = new double[19][19];
+
+		for (int x = 0; x < 19; x++) {
+			for (int y = 18; y >= 0 ; y--) {
+				
+				if (st[x][y] == currentTurn){ // 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					ver[x][y] = Integer.MIN_VALUE;
+				}
+				else if (st[x][y] == CLEAR && countConsecutive > 0) {   // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					ver[x][y] = score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[x][y] ==CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					ver[x][y] = Integer.MIN_VALUE;
+					countConsecutive = 0;
+					openEnds = 0;
+				}
+				else { // 빈 점이 벽에 만나서 끝났을 경우
+					openEnds = 0;
+				}
+			}
+			if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
+				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+			countConsecutive = 0;
+			openEnds = 0;
+		}
+		return ver;
+	}
 	
 	// 반대각선 가중치 계산
-	public Node analyzeLeftDiagonal(Color color) {
+	public double[][] analyzeLeftDiagonal(Color color) {
 		double score = 0;
 		int countConsecutive = 0;
 		int openEnds = 0;
@@ -454,8 +565,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
 		else return null;
 
-		Node node = new Node();
-		Point p = new Point(-1, -1);
+		double[][] left = new double[19][19];
 
 		for(int i = 0; i <= 2 * n - 2; i++) {
 			int lb, ub;
@@ -465,99 +575,199 @@ public class BoardPanel extends JPanel implements MouseListener {
 
 			for(int diff = lb; diff <= ub; diff += 2) {
 				int x = (i + diff) >> 1;
-			int y = i - x;
-
-			if (st[x][y] == currentTurn) // 돌이 검정색이 되면 연속점 1증가
-				countConsecutive++;
-			else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
-				openEnds++;
-				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-				if(score>node.score) {
-					node.score = score;
-					p.x = x;
-					p.y = y;
+				int y = i - x;
+				
+				if (st[x][y] == currentTurn) { // 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					left[x][y] = Integer.MIN_VALUE;
 				}
-				countConsecutive = 0;
-				openEnds = 1;
-			}
-			else if (st[x][y] == CLEAR) // 빈 점이 그냥 등장할 경우
-				openEnds = 1;
-			else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
-//	              score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-				countConsecutive = 0;
-				openEnds = 0;
-			}
-			else openEnds = 0;               
+				else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					left[x][y] = score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[x][y] == CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					countConsecutive = 0;
+					openEnds = 0;
+					left[x][y] = Integer.MIN_VALUE;
+				}
+				else openEnds = 0;               
 			}
 			if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
 				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
 			countConsecutive = 0;
 			openEnds = 0;
 		}
-		return node;
+		return left;
+	}
+
+	// 반대각선 가중치 계산 (반대 방향)
+	public double[][] analyzeLeftDiagonalReverse(Color color) {
+		double score = 0;
+		int countConsecutive = 0;
+		int openEnds = 0;
+		int n = 19;
+
+		int currentTurn;
+
+		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
+		else return null;
+
+		double[][] left = new double[19][19];
+
+		for(int i = 0; i <= 2 * n - 2; i++) {
+			int lb, ub;
+			if(19 <= i) lb = - (2 * n - 2 - i);
+			else lb = - i;
+			ub = -lb;
+
+			for(int diff = ub; diff >= lb; diff -= 2) {
+				int x = (i + diff) >> 1;
+				int y = i - x;
+				
+				if (st[x][y] == currentTurn) { // 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					left[x][y] = Integer.MIN_VALUE;
+				}
+				else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					left[x][y] = score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[x][y] == CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					countConsecutive = 0;
+					openEnds = 0;
+					left[x][y] = Integer.MIN_VALUE;
+				}
+				else openEnds = 0;               
+			}
+			if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
+				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+			countConsecutive = 0;
+			openEnds = 0;
+		}
+		return left;
 	}
 	
 	// 대각선 가중치 계산
-	public Node analyzeRightDiagonal(Color color) {
-	     double score = 0;
-	     int countConsecutive = 0;
-	     int openEnds = 0;
-	     int n = 19;
-	     
-	     int currentTurn;
-	     
-	     if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
-			else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
-			else return null;
-	     
-	     Node node = new Node();
-	     Point p = new Point(-1, -1);
-	     
-	     for(int i = 0; i <= 2 * n - 2; i++) {
-	        int lb, ub;
-	        if(19 <= i) lb = - (2 * n - 2 - i);
-	        else lb = - i;
-	        ub = -lb;
-	        
-	        for(int diff = lb; diff <= ub; diff += 2) {
-	           int x = (i + diff) >> 1;
-	           int y = 18 - i + x;
-	           
-	           if (st[y][x] == currentTurn) // 돌이 검정색이 되면 연속점 1증가
-	              countConsecutive++;
-	           else if (st[y][x] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
-	              openEnds++;
-	              score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	              if(score>node.score) {
-		            	 node.score = score;
-		            	 p.x = x;
-		            	 p.y = y;
-	              }
-	              countConsecutive = 0;
-	              openEnds = 1;
-	           }
-	           else if (st[y][x] == CLEAR) // 빈 점이 그냥 등장할 경우
-	              openEnds = 1;
-	           else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
-//	              score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	              countConsecutive = 0;
-	              openEnds = 0;
-	           }
-	           else openEnds = 0;               
-	        }
-	        if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
-	           score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
-	        countConsecutive = 0;
-	        openEnds = 0;
-	     }
-	     return node;
+	public double[][] analyzeRightDiagonal(Color color) {
+		double score = 0;
+		int countConsecutive = 0;
+		int openEnds = 0;
+		int n = 19;
+
+		int currentTurn;
+
+		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
+		else return null;
+
+		double[][] right = new double[19][19];
+
+		for(int i = 0; i <= 2 * n - 2; i++) {
+			int lb, ub;
+			if(19 <= i) lb = - (2 * n - 2 - i);
+			else lb = - i;
+			ub = -lb;
+
+			for(int diff = lb; diff <= ub; diff += 2) {
+				int x = (i + diff) >> 1;
+				int y = 18 - i + x;
+				
+				if (st[y][x] == currentTurn) { // 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					right[y][x] = Integer.MIN_VALUE;
+				}
+				else if (st[y][x] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					right[y][x] = score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[y][x] == CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					countConsecutive = 0;
+					openEnds = 0;
+					right[y][x] = Integer.MIN_VALUE;
+				}
+				else openEnds = 0;               
+			}
+			if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
+				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+			countConsecutive = 0;
+			openEnds = 0;
+		}
+		return right;
 	  }
+	
+	// 대각선 가중치 계산 (반대 방향)
+	public double[][] analyzeRightDiagonalReverse(Color color) {
+		double score = 0;
+		int countConsecutive = 0;
+		int openEnds = 0;
+		int n = 19;
+
+		int currentTurn;
+
+		if(color.equals(mainBoard.computer)) currentTurn = Board.COM;
+		else if(color.equals(mainBoard.user)) currentTurn = Board.USER;
+		else return null;
+
+		double[][] right = new double[19][19];
+
+		for(int i = 0; i <= 2 * n - 2; i++) {
+			int lb, ub;
+			if(19 <= i) lb = - (2 * n - 2 - i);
+			else lb = - i;
+			ub = -lb;
+
+			for(int diff = ub; diff >= lb; diff -= 2) {
+				int x = (i + diff) >> 1;
+				int y = 18 - i + x;
+				
+				if (st[y][x] == currentTurn) { // 돌이 검정색이 되면 연속점 1증가
+					countConsecutive++;
+					right[y][x] = Integer.MIN_VALUE;
+				}
+				else if (st[y][x] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
+					openEnds++;
+					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+					right[y][x] = score;
+					countConsecutive = 0;
+					openEnds = 1;
+				}
+				else if (st[y][x] == CLEAR) // 빈 점이 그냥 등장할 경우
+					openEnds = 1;
+				else if (countConsecutive > 0) { // 연속점이 다른 돌에 만나서 끝났을 경우
+					countConsecutive = 0;
+					openEnds = 0;
+					right[y][x] = Integer.MIN_VALUE;
+				}
+				else openEnds = 0;               
+			}
+			if (countConsecutive > 0) // 연속점이 벽에 만나서 끝났을 경우
+				score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
+			countConsecutive = 0;
+			openEnds = 0;
+		}
+		return right;
+	}
 	
 	// 가로 확인
 	private int checkHorizontal(Stone s, Point current) {
 		int count=1;
 		for(int x=current.x+40; x<current.x+6*40; x+=40) {
-//			System.out.println((x-40)/40 + " " + (current.y-40)/40);
 			if((x-40)/40<0 || (x-40)/40 > 18) break;
 			else if(stones.get((x-40)/40).get((current.y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((x-40)/40).get((current.y-40)/40).color)) {
@@ -568,7 +778,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 		for(int x=current.x-40; x>current.x-6*40; x-=40) {
-//			System.out.println((x-40)/40 + " " + (current.y-40)/40);
 			if((x-40)/40<0 || (x-40)/40 > 760) break;
 			else if(stones.get((x-40)/40).get((current.y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((x-40)/40).get((current.y-40)/40).color)) {
@@ -586,7 +795,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 	private int checkVertical(Stone s, Point current) {
 		int count=1;
 		for(int y=current.y+40; y<current.y+6*40; y+=40) {
-//					System.out.println((current.x-40)/40 + " " + (y-40)/40);
 			if((y-40)/40<0 || (y-40)/40 > 18) break;
 			else if(stones.get((current.x-40)/40).get((y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((current.x-40)/40).get((y-40)/40).color)) {
@@ -597,7 +805,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 		for(int y=current.y-40; y>current.y-6*40; y-=40) {
-//					System.out.println((current.x-40)/40 + " " + (y-40)/40);
 			if((y-40)/40<0 || (y-40)/40 > 18) break;
 			else if(stones.get((current.x-40)/40).get((y-40)/40).color==null) break;
 			else if(s.color.equals(stones.get((current.x-40)/40).get((y-40)/40).color)) {
@@ -634,7 +841,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 				break;
 			}
 		}
-//		System.out.println(count);
 		return count;
 	}
 	
@@ -661,7 +867,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 				break;
 			}
 		}
-//				System.out.println(count);
 		return count;
 	}
 	
