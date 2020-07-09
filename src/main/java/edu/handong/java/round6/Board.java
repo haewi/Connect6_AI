@@ -203,7 +203,7 @@ public class Board {
 		win.setHorizontalAlignment(SwingConstants.CENTER);
 		win.setFont(new Font("Gill Sans", Font.PLAIN,  70));
 		win.setForeground(Color.red);
-		win.setBounds(200, 375, 400, 100);
+		win.setBounds(100, 375, 600, 100);
 		win.setVisible(false);
 		board.add(win);
 		
