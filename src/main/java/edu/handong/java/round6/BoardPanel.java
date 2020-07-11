@@ -40,6 +40,9 @@ public class BoardPanel extends JPanel implements MouseListener {
 	AudioInputStream stream, stream2;
 	Clip clip, clip2;
 	
+	// 가중치 계산 Class
+	Util util;
+	
 	public BoardPanel(Board b) {
 		mainBoard = b;
 		for(int i=0; i<19; i++) {
@@ -48,6 +51,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 				stones.get(i).add(new Stone());
 			}
 		}
+		util = new Util(mainBoard);
 	}
 
 	@Override
@@ -144,6 +148,97 @@ public class BoardPanel extends JPanel implements MouseListener {
 		}
 	}
 	
+//	public void computerTurn() {
+//		
+//		// 돌 생성
+//		Stone s = new Stone();
+//		s.color = mainBoard.computer;
+//		
+//		// 저장할 위치
+//		Point p=null;
+//		
+//		// 현재 정보 Node에 저장
+//		Node position = new Node();
+//		position.st = Util.deepCopy(st);
+//		
+//		// 컴퓨터의 가장 좋은 장소 찾기
+//		Node n1 = util.minimax(position, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, true, s.color);
+//		s.locate = new Point(40+n1.p.x*40, 40+n1.p.y*40);
+//		
+////		Node us = util.minimax(position, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, true, mainBoard.user);
+//		double[][] userWeight = util.getAllWeight(st, mainBoard.user);
+//		for(int y=0; y<19; y++) {
+//			for(int x=0; x<19; x++) {
+//				if(userWeight[x][y] > 100000) { // 승리 가능할 곳 찾기
+//					p = new Point(x, y);
+//				}
+//			}
+//		}
+//		
+//		// 돌 저장
+//		stones.get(n1.p.x).set(n1.p.y, s);
+//		st[n1.p.x][n1.p.y] = Board.COM;
+//		mainBoard.count++;
+//		
+//		// 우승 확인
+//		int check = checkWinner(s);
+//		if(check == Board.COM) {
+//			mainBoard.winnerMessage("Computer");
+//			return;
+//		}
+//		else if(check == Board.USER) {
+//			mainBoard.winnerMessage("User");
+//			return;
+//		}
+//		
+//		this.repaint();
+//		
+//		
+//		System.out.println("com: " + mainBoard.count);
+//		// User 차례가 되었으면 넘기기
+//		if(mainBoard.count%4 == 1 || mainBoard.count%4 == 3) {
+//			mainBoard.turn = Board.USER;
+//			mainBoard.player.setText("USER");
+//			mainBoard.startTime();
+//		}
+//		else {
+////			System.out.println("second");
+//			
+//			// 돌 생성
+//			s = new Stone();
+//			s.color = mainBoard.computer;
+//			
+//			position = new Node();
+//			position.st = Util.deepCopy(st);
+//			
+//			Node n2 = util.minimax(position, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, false, s.color);
+//			System.out.println("p: " + n2.p.x + " " + n2.p.y);
+//			s.locate = new Point(40+n2.p.x*40, 40+n2.p.y*40);
+//			
+//			// 돌 저장
+//			stones.get(n2.p.x).set(n2.p.y, s);
+//			st[n2.p.x][n2.p.y] = Board.COM;
+//			mainBoard.count++;
+//
+//			System.out.println("com: " + mainBoard.count);
+//			// 우승 확인
+//			check = checkWinner(s);
+//			if (check == Board.COM) {
+//				mainBoard.winnerMessage("Computer");
+//				return;
+//			} else if (check == Board.USER) {
+//				mainBoard.winnerMessage("User");
+//				return;
+//			}
+//			
+//			mainBoard.turn = Board.USER;
+//			mainBoard.player.setText("USER");
+//			mainBoard.startTime();
+//			
+//			this.repaint();
+//		}
+//	}
+	
 	public void computerTurn() {
 		// 돌 생성
 		Stone s = new Stone();
@@ -168,8 +263,34 @@ public class BoardPanel extends JPanel implements MouseListener {
 			}
 		}
 		
+//		Node n = new Node();
+//		n.st = Util.deepCopy(st);
+//		
+//		// 컴퓨터의 색에 대한 가중치 저장
+//		Node t = util.minimax(n, 2, Integer.MIN_VALUE, Integer.MAX_VALUE, true, s.color);
+//		st = Util.deepCopy(t.st);
+//		
+//		// 컴퓨터의 색에 대한 가중치 중에서 승리할 수 있는지 확인
+//		Point tmp = null;
+//		double[][] com = util.getAllWeight(st, mainBoard.computer);
+//		double finish = Integer.MIN_VALUE;
+//		for(int x=0; x<19; x++) {
+//			for(int y=0; y<19; y++) {
+//				if(com[x][y] > 100000) { // 승리 가능할 곳 찾기
+//					p = new Point(x, y);
+//				}
+//				if(com[x][y] > finish) { // 최대 가중치 위치 찾기
+//					finish = com[x][y];
+//					tmp = new Point(x, y);
+//				}
+//			}
+//		}
+		
+		
 		// 방어
 		if(p==null) {
+//			n = new Node();
+//			n.st = Util.deepCopy(st);
 			double[][] user = getAllWeight(mainBoard.user);
 			for(int x=0; x<19; x++) {
 				for(int y=0; y<19; y++) {
@@ -186,6 +307,7 @@ public class BoardPanel extends JPanel implements MouseListener {
 		// 방어할게 없으면 공격
 		if(p==null) {
 			p = tmp;
+//			p = t.p;
 		}
 		
 		s.locate = new Point(40+p.x*40, 40+p.y*40);
@@ -365,8 +487,8 @@ public class BoardPanel extends JPanel implements MouseListener {
 		double[][] right = analyzeRightDiagonal(color);
 		double[][] right2 = analyzeRightDiagonalReverse(color);
 		
-		if(color == mainBoard.computer) System.out.println("computer");
-		else System.out.println("user");
+//		if(color == mainBoard.computer) System.out.println("computer");
+//		else System.out.println("user");
 		for(int y=0; y<19; y++) {
 			for(int x=0; x<19; x++) {
 				all[x][y] = hor[x][y] + ver[x][y] + left[x][y] + right[x][y] + hor2[x][y] + ver2[x][y] + left2[x][y] + right2[x][y];
@@ -403,11 +525,6 @@ public class BoardPanel extends JPanel implements MouseListener {
 				if (st[x][y] == currentTurn) { // 돌이 검정색이고 되면 연속점 1증가
 					countConsecutive++;
 				}
-//				else if (st[x][y] == CLEAR && countConsecutive > 0 && st[x+1][y+1] == currentTurn) { // 연속점에서 열린 점으로 끝나고 그 다음에 자신의 돌이 있는 경우
-//					score = connect6ShapeScore(countConsecutive+1, openEnds+1, currentTurn);
-//					hor[x][y] = score;
-//					weight[x][y] += score;
-//				}
 				else if (st[x][y] == CLEAR && countConsecutive > 0) { // 연속점에서 열린 점으로 끝났을 경우
 					openEnds++;
 					score = connect6ShapeScore(countConsecutive, openEnds, currentTurn);
@@ -919,8 +1036,3 @@ public class BoardPanel extends JPanel implements MouseListener {
 		
 	}
 }
-
-
-
-
-

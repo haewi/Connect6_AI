@@ -77,7 +77,8 @@ public class Util {
 
 	// 주어진 Node 안의 배열로 Color에 따른 가중치를 계산하여 가장 큰 값을 리턴
 	public Node getBiggestWeight(Node position, Color c) {
-		
+		boolean notContain = false;
+		if(position.p==null) notContain = true;
 		double[][] st = getAllWeight(position.st, c);
 		
 		double max = Integer.MIN_VALUE;
@@ -86,10 +87,12 @@ public class Util {
 			for(int x=0; x<19; x++) {
 				if(st[x][y]>max) {
 					max = st[x][y];
+					if(notContain){
+						position.p = new Point(x, y);
+					}
 				}
 			}
 		}
-		
 		
 		position.score = max;
 		return position;
@@ -122,7 +125,7 @@ public class Util {
 			}
 		}
 		
-		System.out.println("p1, p2: " + p1.x + " " + p1.y + " - " + p2.x + ' ' + p2.y);
+//		System.out.println("p1, p2: " + p1.x + " " + p1.y + " - " + p2.x + ' ' + p2.y);
 		
 		Node child1 = new Node();
 		child1.st = deepCopy(parent.st);
